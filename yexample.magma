@@ -1,0 +1,56 @@
+//First we define M as a generic 5x5 symmetric matrix. We double the entries on the diagonal because we will be working with the non-normalized forms of quadrics. We take I3 to be the ideal of the 3x3 minors saturated with respect to 2, as in Lemma 3.3.
+
+R<[x]> := PolynomialRing(Integers(), 15);
+M := SymmetricMatrix(x[1..15]);
+M := M + DiagonalMatrix([M[i][i] : i in [1..5]]);
+I3 := Saturation(ideal<R | Minors(M,3)>, ideal<R | 2>);
+
+S<[y]> := PolynomialRing(Integers(), 5);
+
+//Next we generate the random strings of 15 numbers to fill in the five symmetric matrices.  If we wish to find an example including particular quadrics, we can enter those as L[1], etc after generating L.
+
+L := [[ Random(-5,5) : i in [1..15] ] : j in [1..5]];
+
+//Next we convert the symmetric matrices into a linear functional and check whether any of the bilinear forms corresponding to symmetric matrices in our linear functional lie in  V3 over Z. If the saturation returns 1, the answer is no.
+
+F := [ &+[ L[i][j]*y[i] : i in [1..5] ] : j in [1..15] ];
+
+Saturation(ideal< S | [ Evaluate(a, F) : a in Basis(I3) ] >);
+
+
+//Next we check that our choice of five quadrics gives a ``regular'' linear system over Q, as defined by Hosono and Takagi. This is equivalent to showing that the variety X, defined in Section 4, is smooth. First, we check that the intersection of the associated quadrics does not have any Q-rational points so that the involution is fixed-point free. If it is, the saturation of I will contain 1. Before printing the saturation of I we also print the equations for the quadrics.
+
+m := [ Evaluate(M, l) : l in L ];
+
+//Next we want to use these matrices to form the corresponding quadrics with coefficients in Q. We can accomplish this with matrix multiplication. Using Determinant() converts the 1x1 matrix to a ring element. Now the quadrics are f[1],f[2], etc. 
+
+T<x0,x1,x2,x3,x4> := PolynomialRing(Rationals(),5);
+
+f:=[Determinant(Matrix([[x0,x1,x2,x3,x4]])*ChangeRing(m[i],T)*Matrix([[x0],[x1],[x2],[x3],[x4]])) : i in [1..5]];
+h:=[1/2*f[i]:i in [1..5]];
+print h;
+
+I := ideal< T | {f[i]: i in [1..5]}>;
+J:=Saturation(I);
+time gb:=GroebnerBasis(J);
+print gb;
+
+//To finish checking that X is smooth, we check that X~ is smooth by analyzing its Jacobians. If it is smooth, the saturation of minors with respect to K below will contain 1. We saturate by the product of two ideals below because we are working in the product of two projective spaces.
+
+U<x0,x1,x2,x3,x4,y0,y1,y2,y3,y4> := PolynomialRing(Rationals(),10);
+
+g:=[Determinant(Matrix([[x0,x1,x2,x3,x4]])*ChangeRing(m[i],U)*Matrix([[y0],[y1],[y2],[y3],[y4]])): i in [1..5]];
+
+J:= ideal<U | x0,x1,x2,x3,x4>;
+K:= ideal<U | y0,y1,y2,y3,y4>;
+
+Mat:=JacobianMatrix(g);
+
+minors := ideal<U | Minors(Mat,5),{g[i]:i in [1..5]}>;
+
+satminors:=Saturation(minors,J*K);
+time A:=GroebnerBasis(satminors);
+print A;
+
+
+
